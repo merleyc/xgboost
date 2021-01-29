@@ -27,7 +27,14 @@
 #include "../common/common.h"
 #include "../common/random.h"
 #include "../common/timer.h"
-
+#include <sys/time.h>
+long int mytimer(){
+   struct timeval tp;
+   gettimeofday(&tp, NULL);
+   long int ms = tp.tv_sec * 1000 + tp.tv_usec / 1000;
+   return ms;
+}
+size_t imc = 0;
 namespace xgboost {
 namespace gbm {
 
@@ -285,6 +292,7 @@ void GBTree::BoostNewTrees(HostDeviceVector<GradientPair>* gpair,
                            DMatrix *p_fmat,
                            int bst_group,
                            std::vector<std::unique_ptr<RegTree> >* ret) {
+  long int ini_mc = mytimer();
   std::vector<RegTree*> new_trees;
   ret->clear();
   // create the trees
@@ -324,6 +332,10 @@ void GBTree::BoostNewTrees(HostDeviceVector<GradientPair>* gpair,
   for (auto& up : updaters_) {
     up->Update(gpair, p_fmat, new_trees);
   }
+  std::string simc = "MC BoostNewTrees iteration " + std::to_string(imc) + " (ms):";
+  std::string MC_st0 = simc + std::to_string(mytimer() - ini_mc);
+  std::cout << MC_st0 << std::endl;
+  imc = imc + 1;
 }
 
 void GBTree::CommitModel(std::vector<std::vector<std::unique_ptr<RegTree>>>&& new_trees,
